@@ -124,16 +124,16 @@ export default function App() {
   // --- stamp settings ---
   const [prefix, setPrefix] = useState<string>("EP.");
   const [startNumber, setStartNumber] = useState<number>(1);
-  const [digits, setDigits] = useState<number>(2);
+  const [digits, setDigits] = useState<number>(1);
 
-  const [fontSize, setFontSize] = useState<number>(100);
+  const [fontSize, setFontSize] = useState<number>(140);
   const [fontFamily, setFontFamily] = useState<string>(
     "Noto Sans JP, system-ui, -apple-system, Segoe UI, Arial"
   );
   const [bold, setBold] = useState<boolean>(true);
   const [textColor, setTextColor] = useState<string>("#ffffff");
 
-  const [useBg, setUseBg] = useState<boolean>(true);
+  const [useBg, setUseBg] = useState<boolean>(false);
   const [bgColor, setBgColor] = useState<string>("#000000");
   const [bgAlpha, setBgAlpha] = useState<number>(0.55);
   const [padding, setPadding] = useState<number>(18);
