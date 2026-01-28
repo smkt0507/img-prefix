@@ -596,7 +596,7 @@ export default function App() {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Card>
             <CardHeader
               title={`プレビュー (${previews.length})`}
@@ -610,7 +610,7 @@ export default function App() {
               ) : (
                 <Grid container spacing={2}>
                   {previews.map((p) => (
-                    <Grid size={{ xs: 12, md: 4 }} key={p.id}>
+                    <Grid size={{ xs: 12, md: 6 }} key={p.id}>
                       <Box
                         sx={{
                           border: "1px solid",
