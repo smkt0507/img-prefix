@@ -122,11 +122,11 @@ export default function App() {
   const [progress, setProgress] = useState<ProgressState>({ done: 0, total: 0 });
 
   // --- stamp settings ---
-  const [prefix, setPrefix] = useState<string>("EP ");
+  const [prefix, setPrefix] = useState<string>("EP.");
   const [startNumber, setStartNumber] = useState<number>(1);
   const [digits, setDigits] = useState<number>(2);
 
-  const [fontSize, setFontSize] = useState<number>(64);
+  const [fontSize, setFontSize] = useState<number>(100);
   const [fontFamily, setFontFamily] = useState<string>(
     "Noto Sans JP, system-ui, -apple-system, Segoe UI, Arial"
   );
