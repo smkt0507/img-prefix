@@ -126,7 +126,7 @@ export default function App() {
   const [startNumber, setStartNumber] = useState<number>(1);
   const [digits, setDigits] = useState<number>(1);
 
-  const [fontSize, setFontSize] = useState<number>(140);
+  const [fontSize, setFontSize] = useState<number>(170);
   const [fontFamily, setFontFamily] = useState<string>(
     "Noto Sans JP, system-ui, -apple-system, Segoe UI, Arial"
   );
@@ -254,9 +254,9 @@ export default function App() {
 
         if (useShadow) {
           ctx.shadowColor = `rgba(0,0,0,${shadowAlpha})`;
-          ctx.shadowBlur = 8;
-          ctx.shadowOffsetX = 2;
-          ctx.shadowOffsetY = 2;
+          ctx.shadowBlur = 20;
+          ctx.shadowOffsetX = 5;
+          ctx.shadowOffsetY = 5;
         } else {
           ctx.shadowColor = "transparent";
           ctx.shadowBlur = 0;
