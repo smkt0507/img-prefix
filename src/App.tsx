@@ -31,10 +31,24 @@ type PreviewItem = {
   stampedUrl: string;
   stampedBlob: Blob | null;
   label: string;
+  sequenceNumber: number;
+  width: number;
+  height: number;
+  sizeLabel: string;
   error?: string;
 };
 
 type ProgressState = { done: number; total: number };
+
+type OutputSize = {
+  key: "landscape" | "portrait";
+  width: number;
+  height: number;
+  fontSize: number;
+  offsetX: number;
+  offsetY: number;
+  label: string;
+};
 
 function naturalCompare(a: string, b: string): number {
   // "img2.png" < "img10.png" のように自然順で並べる
@@ -125,8 +139,6 @@ export default function App() {
   const [prefix, setPrefix] = useState<string>("EP.");
   const [startNumber, setStartNumber] = useState<number>(1);
   const [digits, setDigits] = useState<number>(1);
-
-  const [fontSize, setFontSize] = useState<number>(170);
   const [fontFamily, setFontFamily] = useState<string>(
     "Noto Sans JP, system-ui, -apple-system, Segoe UI, Arial"
   );
@@ -141,11 +153,32 @@ export default function App() {
   const [useShadow, setUseShadow] = useState<boolean>(true);
   const [shadowAlpha, setShadowAlpha] = useState<number>(0.6);
 
-  const [offsetX, setOffsetX] = useState<number>(30);
-  const [offsetY, setOffsetY] = useState<number>(30);
-
   const [outputFormat, setOutputFormat] = useState<OutputFormat>("png");
   const [jpegQuality, setJpegQuality] = useState<number>(0.92);
+
+  const outputSizes: OutputSize[] = useMemo(
+    () => [
+      {
+        key: "landscape",
+        width: 1920,
+        height: 1080,
+        fontSize: 170,
+        offsetX: 30,
+        offsetY: 30,
+        label: "1920x1080",
+      },
+      {
+        key: "portrait",
+        width: 500,
+        height: 750,
+        fontSize: 80,
+        offsetX: 12,
+        offsetY: 8,
+        label: "500x750",
+      },
+    ],
+    []
+  );
 
   const sortedFiles = useMemo<File[]>(() => {
     const arr = [...files];
@@ -183,7 +216,7 @@ export default function App() {
     revokePreviewUrls(previews);
     setPreviews([]);
     setIsRendering(true);
-    setProgress({ done: 0, total: sortedFiles.length });
+    setProgress({ done: 0, total: sortedFiles.length * outputSizes.length });
 
     try {
       const next: PreviewItem[] = [];
@@ -196,91 +229,118 @@ export default function App() {
         try {
           img = await fileToImage(file);
         } catch {
-          next.push({
-            id: `${file.name}-${i}`,
-            name: file.name,
-            originalUrl,
-            stampedUrl: "",
-            stampedBlob: null,
-            label: "",
-            error: "画像の読み込みに失敗しました",
+          const num = startNumber + i;
+          outputSizes.forEach((size) => {
+            next.push({
+              id: `${file.name}-${i}-${size.key}`,
+              name: file.name,
+              originalUrl,
+              stampedUrl: "",
+              stampedBlob: null,
+              label: "",
+              sequenceNumber: num,
+              width: size.width,
+              height: size.height,
+              sizeLabel: size.label,
+              error: "画像の読み込みに失敗しました",
+            });
           });
-          setProgress((p) => ({ ...p, done: i + 1 }));
+          setProgress((p) => ({ ...p, done: p.done + outputSizes.length }));
           continue;
         }
-
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth || img.width;
-        canvas.height = img.naturalHeight || img.height;
-
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          next.push({
-            id: `${file.name}-${i}`,
-            name: file.name,
-            originalUrl,
-            stampedUrl: "",
-            stampedBlob: null,
-            label: "",
-            error: "Canvasの初期化に失敗しました",
-          });
-          setProgress((p) => ({ ...p, done: i + 1 }));
-          continue;
-        }
-
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
         const num = startNumber + i;
         const label = `${prefix}${padNumber(num, digits)}`;
+        for (let s = 0; s < outputSizes.length; s++) {
+          const size = outputSizes[s];
+          const canvas = document.createElement("canvas");
+          canvas.width = size.width;
+          canvas.height = size.height;
 
-        const weight = bold ? "700" : "400";
-        ctx.font = `${weight} ${fontSize}px ${fontFamily}`;
-        ctx.textBaseline = "top";
-        ctx.textAlign = "left";
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            next.push({
+              id: `${file.name}-${i}-${size.key}`,
+              name: file.name,
+              originalUrl,
+              stampedUrl: "",
+              stampedBlob: null,
+              label: "",
+              sequenceNumber: num,
+              width: size.width,
+              height: size.height,
+              sizeLabel: size.label,
+              error: "Canvasの初期化に失敗しました",
+            });
+            setProgress((p) => ({ ...p, done: p.done + 1 }));
+            continue;
+          }
 
-        const metrics = ctx.measureText(label);
-        const textW = metrics.width;
-        const textH = fontSize * 1.1;
+          ctx.fillStyle = "#000000";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        const x = clamp(offsetX, 0, canvas.width - 1);
-        const y = clamp(offsetY, 0, canvas.height - 1);
+          const srcW = img.naturalWidth || img.width;
+          const srcH = img.naturalHeight || img.height;
+          const scale = Math.min(canvas.width / srcW, canvas.height / srcH);
+          const drawW = srcW * scale;
+          const drawH = srcH * scale;
+          const drawX = (canvas.width - drawW) / 2;
+          const drawY = (canvas.height - drawH) / 2;
+          ctx.drawImage(img, drawX, drawY, drawW, drawH);
 
-        if (useBg) {
-          const rectW = textW + padding * 2;
-          const rectH = textH + padding * 2;
-          ctx.fillStyle = hexToRgba(bgColor, bgAlpha);
-          ctx.fillRect(x, y, rectW, rectH);
+          const weight = bold ? "700" : "400";
+          ctx.font = `${weight} ${size.fontSize}px ${fontFamily}`;
+          ctx.textBaseline = "top";
+          ctx.textAlign = "left";
+
+          const metrics = ctx.measureText(label);
+          const textW = metrics.width;
+          const textH = size.fontSize * 1.1;
+
+          const x = clamp(size.offsetX, 0, canvas.width - 1);
+          const y = clamp(size.offsetY, 0, canvas.height - 1);
+
+          if (useBg) {
+            const rectW = textW + padding * 2;
+            const rectH = textH + padding * 2;
+            ctx.fillStyle = hexToRgba(bgColor, bgAlpha);
+            ctx.fillRect(x, y, rectW, rectH);
+          }
+
+          if (useShadow) {
+            ctx.shadowColor = `rgba(0,0,0,${shadowAlpha})`;
+            ctx.shadowBlur = 20;
+            ctx.shadowOffsetX = 5;
+            ctx.shadowOffsetY = 5;
+          } else {
+            ctx.shadowColor = "transparent";
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+          }
+
+          ctx.fillStyle = textColor;
+          ctx.fillText(label, x + padding, y + padding);
+
+          const mime = outputFormat === "jpeg" ? "image/jpeg" : "image/png";
+          const blob = await canvasToBlob(canvas, mime, jpegQuality);
+          const stampedUrl = URL.createObjectURL(blob);
+
+          next.push({
+            id: `${file.name}-${i}-${size.key}`,
+            name: file.name,
+            originalUrl,
+            stampedUrl,
+            stampedBlob: blob,
+            label,
+            sequenceNumber: num,
+            width: size.width,
+            height: size.height,
+            sizeLabel: size.label,
+          });
+
+          setProgress((p) => ({ ...p, done: p.done + 1 }));
         }
-
-        if (useShadow) {
-          ctx.shadowColor = `rgba(0,0,0,${shadowAlpha})`;
-          ctx.shadowBlur = 20;
-          ctx.shadowOffsetX = 5;
-          ctx.shadowOffsetY = 5;
-        } else {
-          ctx.shadowColor = "transparent";
-          ctx.shadowBlur = 0;
-          ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = 0;
-        }
-
-        ctx.fillStyle = textColor;
-        ctx.fillText(label, x + padding, y + padding);
-
-        const mime = outputFormat === "jpeg" ? "image/jpeg" : "image/png";
-        const blob = await canvasToBlob(canvas, mime, jpegQuality);
-        const stampedUrl = URL.createObjectURL(blob);
-
-        next.push({
-          id: `${file.name}-${i}`,
-          name: file.name,
-          originalUrl,
-          stampedUrl,
-          stampedBlob: blob,
-          label,
-        });
-
-        setProgress((p) => ({ ...p, done: i + 1 }));
       }
 
       setPreviews(next);
@@ -294,7 +354,6 @@ export default function App() {
     prefix,
     startNumber,
     digits,
-    fontSize,
     fontFamily,
     bold,
     textColor,
@@ -304,10 +363,9 @@ export default function App() {
     padding,
     useShadow,
     shadowAlpha,
-    offsetX,
-    offsetY,
     outputFormat,
     jpegQuality,
+    outputSizes,
   ]);
 
   useEffect(() => {
@@ -320,18 +378,19 @@ export default function App() {
     if (!valid.length) return;
 
     const zip = new JSZip();
-    valid.forEach((p, idx) => {
+    valid.forEach((p) => {
       const base = p.name.replace(/\.[^.]+$/, "");
       const ext = outputFormat === "jpeg" ? "jpg" : "png";
-      const n = padNumber(startNumber + idx, digits);
-      const fileName = `${n}_${base}.${ext}`;
+      const n = padNumber(p.sequenceNumber, digits);
+      const sizeTag = p.sizeLabel.replace(/\s+/g, "");
+      const fileName = `${n}_${base}_${sizeTag}.${ext}`;
       zip.file(fileName, p.stampedBlob as Blob);
     });
 
     const blob = await zip.generateAsync({ type: "blob" });
     const zipName = `stamped_${new Date().toISOString().slice(0, 10)}.zip`;
     saveAs(blob, zipName);
-  }, [previews, outputFormat, startNumber, digits]);
+  }, [previews, outputFormat, digits]);
 
   return (
     <Box sx={{ p: 2 }}>
@@ -410,30 +469,20 @@ export default function App() {
                   />
                 </Stack>
 
-                <Stack direction="row" spacing={1}>
-                  <TextField
-                    label="フォントサイズ(px)"
-                    type="number"
-                    value={fontSize}
-                    onChange={(e) => setFontSize(clamp(Number(e.target.value || 64), 8, 400))}
-                    fullWidth
-                    inputProps={{ min: 8, max: 400 }}
-                  />
-                  <TextField
-                    label="文字色"
-                    value={textColor}
-                    onChange={(e) => setTextColor(e.target.value)}
-                    fullWidth
-                    InputProps={{
-                      startAdornment: <InputAdornment position="start">#</InputAdornment>,
-                    }}
-                    helperText="例：#ffffff"
-                    onBlur={() => {
-                      const v = textColor.startsWith("#") ? textColor : `#${textColor}`;
-                      setTextColor(v);
-                    }}
-                  />
-                </Stack>
+                <TextField
+                  label="文字色"
+                  value={textColor}
+                  onChange={(e) => setTextColor(e.target.value)}
+                  fullWidth
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start">#</InputAdornment>,
+                  }}
+                  helperText="例：#ffffff"
+                  onBlur={() => {
+                    const v = textColor.startsWith("#") ? textColor : `#${textColor}`;
+                    setTextColor(v);
+                  }}
+                />
 
                 <TextField
                   label="フォントファミリー"
@@ -451,26 +500,6 @@ export default function App() {
                   }
                   label="太字"
                 />
-
-                <Divider />
-
-                <Typography variant="subtitle2">配置（左上からのオフセット）</Typography>
-                <Stack direction="row" spacing={2}>
-                  <TextField
-                    label="X"
-                    type="number"
-                    value={offsetX}
-                    onChange={(e) => setOffsetX(Math.max(0, Number(e.target.value || 0)))}
-                    fullWidth
-                  />
-                  <TextField
-                    label="Y"
-                    type="number"
-                    value={offsetY}
-                    onChange={(e) => setOffsetY(Math.max(0, Number(e.target.value || 0)))}
-                    fullWidth
-                  />
-                </Stack>
 
                 <Divider />
 
@@ -608,50 +637,117 @@ export default function App() {
                   画像を選択すると自動で生成・プレビュー表示されます。
                 </Typography>
               ) : (
-                <Grid container spacing={2}>
-                  {previews.map((p) => (
-                    <Grid size={{ xs: 12, md: 6 }} key={p.id}>
-                      <Box
-                        sx={{
-                          border: "1px solid",
-                          borderColor: "divider",
-                          borderRadius: 2,
-                          overflow: "hidden",
-                        }}
-                      >
-                        <Box sx={{ p: 1, bgcolor: "background.default" }}>
-                          <Typography variant="caption" sx={{ display: "block" }} noWrap title={p.name}>
-                            {p.name}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" noWrap title={p.label}>
-                            {p.label || "—"}
-                          </Typography>
-                        </Box>
-
-                        <Box sx={{ aspectRatio: "4/3", bgcolor: "black" }}>
-                          {p.error ? (
-                            <Box sx={{ p: 2 }}>
-                              <Typography color="error" variant="body2">
-                                {p.error}
-                              </Typography>
-                            </Box>
-                          ) : (
-                            <img
-                              src={p.stampedUrl}
-                              alt={p.name}
-                              style={{
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "contain",
-                                display: "block",
+                <Stack spacing={3}>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                      1920x1080
+                    </Typography>
+                    <Grid container spacing={2}>
+                      {previews
+                        .filter((p) => p.width === 1920 && p.height === 1080)
+                        .map((p) => (
+                          <Grid size={{ xs: 12, md: 6 }} key={p.id}>
+                            <Box
+                              sx={{
+                                border: "1px solid",
+                                borderColor: "divider",
+                                borderRadius: 2,
+                                overflow: "hidden",
                               }}
-                            />
-                          )}
-                        </Box>
-                      </Box>
+                            >
+                              <Box sx={{ p: 1, bgcolor: "background.default" }}>
+                                <Typography variant="caption" sx={{ display: "block" }} noWrap title={p.name}>
+                                  {p.name}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" noWrap>
+                                  {p.sizeLabel}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" noWrap title={p.label}>
+                                  {p.label || "—"}
+                                </Typography>
+                              </Box>
+
+                              <Box sx={{ aspectRatio: `${p.width} / ${p.height}`, bgcolor: "black" }}>
+                                {p.error ? (
+                                  <Box sx={{ p: 2 }}>
+                                    <Typography color="error" variant="body2">
+                                      {p.error}
+                                    </Typography>
+                                  </Box>
+                                ) : (
+                                  <img
+                                    src={p.stampedUrl}
+                                    alt={p.name}
+                                    style={{
+                                      width: "100%",
+                                      height: "100%",
+                                      objectFit: "contain",
+                                      display: "block",
+                                    }}
+                                  />
+                                )}
+                              </Box>
+                            </Box>
+                          </Grid>
+                        ))}
                     </Grid>
-                  ))}
-                </Grid>
+                  </Box>
+
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                      500x750
+                    </Typography>
+                    <Grid container spacing={2}>
+                      {previews
+                        .filter((p) => p.width === 500 && p.height === 750)
+                        .map((p) => (
+                          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={p.id}>
+                            <Box
+                              sx={{
+                                border: "1px solid",
+                                borderColor: "divider",
+                                borderRadius: 2,
+                                overflow: "hidden",
+                              }}
+                            >
+                              <Box sx={{ p: 1, bgcolor: "background.default" }}>
+                                <Typography variant="caption" sx={{ display: "block" }} noWrap title={p.name}>
+                                  {p.name}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" noWrap>
+                                  {p.sizeLabel}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" noWrap title={p.label}>
+                                  {p.label || "—"}
+                                </Typography>
+                              </Box>
+
+                              <Box sx={{ aspectRatio: `${p.width} / ${p.height}`, bgcolor: "black" }}>
+                                {p.error ? (
+                                  <Box sx={{ p: 2 }}>
+                                    <Typography color="error" variant="body2">
+                                      {p.error}
+                                    </Typography>
+                                  </Box>
+                                ) : (
+                                  <img
+                                    src={p.stampedUrl}
+                                    alt={p.name}
+                                    style={{
+                                      width: "100%",
+                                      height: "100%",
+                                      objectFit: "contain",
+                                      display: "block",
+                                    }}
+                                  />
+                                )}
+                              </Box>
+                            </Box>
+                          </Grid>
+                        ))}
+                    </Grid>
+                  </Box>
+                </Stack>
               )}
             </CardContent>
           </Card>
