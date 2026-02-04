@@ -1,42 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  Checkbox,
-  Divider,
-  FormControlLabel,
-  Grid,
-  InputAdornment,
-  LinearProgress,
-  Slider,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
-import UploadFileIcon from "@mui/icons-material/UploadFile";
-import DownloadIcon from "@mui/icons-material/Download";
-import RefreshIcon from "@mui/icons-material/Refresh";
+import { Box, Grid } from "@mui/material";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
-
-type PreviewItem = {
-  id: string;
-  name: string;
-  originalUrl: string;
-  stampedUrl: string;
-  stampedBlob: Blob | null;
-  label: string;
-  sequenceNumber: number;
-  width: number;
-  height: number;
-  sizeLabel: string;
-  error?: string;
-};
-
-type ProgressState = { done: number; total: number };
+import SettingsPanel from "./components/SettingsPanel";
+import PreviewPanel from "./components/PreviewPanel";
+import type { PreviewItem, ProgressState } from "./types";
 
 type OutputSize = {
   key: "landscape" | "portrait";
@@ -393,347 +361,47 @@ export default function App() {
     <Box sx={{ p: 2 }}>
       <Grid container spacing={2}>
         <Grid  size={{ xs: 12, md: 4 }}>
-          <Card>
-            <CardHeader
-              title="スタンプ設定"
-              subheader="複数画像をファイル名順で処理し、左上に話数スタンプを付けてZIPでDL"
-            />
-            <CardContent>
-              <Stack spacing={2}>
-                <input
-                  ref={inputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={onPickFiles}
-                  style={{ display: "none" }}
-                />
-
-                <Button
-                  variant="contained"
-                  startIcon={<UploadFileIcon />}
-                  onClick={() => inputRef.current?.click()}
-                >
-                  画像を選択（複数可）
-                </Button>
-
-                <Stack direction="row" spacing={1}>
-                  <Button
-                    variant="outlined"
-                    startIcon={<RefreshIcon />}
-                    onClick={resetAll}
-                    disabled={!files.length && !previews.length}
-                    fullWidth
-                  >
-                    リセット
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={() => void renderAll()}
-                    disabled={!files.length || isRendering}
-                    fullWidth
-                  >
-                    再生成
-                  </Button>
-                </Stack>
-
-                <Divider />
-
-                <TextField
-                  label="プレフィックス"
-                  value={prefix}
-                  onChange={(e) => setPrefix(e.target.value)}
-                  helperText="例：EP / 第 / # など"
-                  fullWidth
-                />
-
-                <Stack direction="row" spacing={1}>
-                  <TextField
-                    label="開始番号"
-                    type="number"
-                    value={startNumber}
-                    onChange={(e) => setStartNumber(Number(e.target.value || 1))}
-                    fullWidth
-                    inputProps={{ min: 0 }}
-                  />
-                  <TextField
-                    label="桁数"
-                    type="number"
-                    value={digits}
-                    onChange={(e) => setDigits(clamp(Number(e.target.value || 2), 1, 6))}
-                    fullWidth
-                    inputProps={{ min: 1, max: 6 }}
-                  />
-                </Stack>
-
-                <TextField
-                  label="文字色"
-                  value={textColor}
-                  onChange={(e) => setTextColor(e.target.value)}
-                  fullWidth
-                  InputProps={{
-                    startAdornment: <InputAdornment position="start">#</InputAdornment>,
-                  }}
-                  helperText="例：#ffffff"
-                  onBlur={() => {
-                    const v = textColor.startsWith("#") ? textColor : `#${textColor}`;
-                    setTextColor(v);
-                  }}
-                />
-
-                <TextField
-                  label="フォントファミリー"
-                  value={fontFamily}
-                  onChange={(e) => setFontFamily(e.target.value)}
-                  fullWidth
-                />
-
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={bold}
-                      onChange={(e) => setBold(e.target.checked)}
-                    />
-                  }
-                  label="太字"
-                />
-
-                <Divider />
-
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={useBg}
-                      onChange={(e) => setUseBg(e.target.checked)}
-                    />
-                  }
-                  label="背景ボックスを付ける"
-                />
-
-                {useBg && (
-                  <>
-                    <Stack direction="row" spacing={1}>
-                      <TextField
-                        label="背景色"
-                        value={bgColor}
-                        onChange={(e) => setBgColor(e.target.value)}
-                        fullWidth
-                        onBlur={() => {
-                          const v = bgColor.startsWith("#") ? bgColor : `#${bgColor}`;
-                          setBgColor(v);
-                        }}
-                      />
-                      <TextField
-                        label="余白(px)"
-                        type="number"
-                        value={padding}
-                        onChange={(e) => setPadding(clamp(Number(e.target.value || 18), 0, 200))}
-                        fullWidth
-                      />
-                    </Stack>
-
-                    <Typography variant="body2">背景透明度</Typography>
-                    <Slider
-                      value={bgAlpha}
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      onChange={(_, v) => setBgAlpha(v as number)}
-                      valueLabelDisplay="auto"
-                    />
-                  </>
-                )}
-
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={useShadow}
-                      onChange={(e) => setUseShadow(e.target.checked)}
-                    />
-                  }
-                  label="文字影（読みやすさ）"
-                />
-
-                {useShadow && (
-                  <>
-                    <Typography variant="body2">影の濃さ</Typography>
-                    <Slider
-                      value={shadowAlpha}
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      onChange={(_, v) => setShadowAlpha(v as number)}
-                      valueLabelDisplay="auto"
-                    />
-                  </>
-                )}
-
-                <Divider />
-
-                <TextField
-                  label="JPEG品質"
-                  type="number"
-                  value={jpegQuality}
-                  onChange={(e) => setJpegQuality(clamp(Number(e.target.value || 0.92), 0.1, 1))}
-                  inputProps={{ min: 0.1, max: 1, step: 0.01 }}
-                  fullWidth
-                />
-
-                <Button
-                  variant="contained"
-                  startIcon={<DownloadIcon />}
-                  onClick={() => void downloadZip()}
-                  disabled={!previews.length || isRendering}
-                >
-                  ZIPで一括ダウンロード
-                </Button>
-
-                {isRendering && (
-                  <Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={(progress.done / Math.max(progress.total, 1)) * 100}
-                    />
-                    <Typography variant="caption">
-                      生成中… {progress.done}/{progress.total}
-                    </Typography>
-                  </Box>
-                )}
-
-                <Typography variant="caption" color="text.secondary">
-                  ※ ブラウザ上で処理します。大量/高解像度だと重いので必要なら最適化（WebWorker / リサイズ）追加可能。
-                </Typography>
-              </Stack>
-            </CardContent>
-          </Card>
+          <SettingsPanel
+            inputRef={inputRef}
+            files={files}
+            previews={previews}
+            isRendering={isRendering}
+            progress={progress}
+            prefix={prefix}
+            setPrefix={setPrefix}
+            startNumber={startNumber}
+            setStartNumber={setStartNumber}
+            digits={digits}
+            setDigits={setDigits}
+            fontFamily={fontFamily}
+            setFontFamily={setFontFamily}
+            bold={bold}
+            setBold={setBold}
+            textColor={textColor}
+            setTextColor={setTextColor}
+            useBg={useBg}
+            setUseBg={setUseBg}
+            bgColor={bgColor}
+            setBgColor={setBgColor}
+            bgAlpha={bgAlpha}
+            setBgAlpha={setBgAlpha}
+            padding={padding}
+            setPadding={setPadding}
+            useShadow={useShadow}
+            setUseShadow={setUseShadow}
+            shadowAlpha={shadowAlpha}
+            setShadowAlpha={setShadowAlpha}
+            jpegQuality={jpegQuality}
+            setJpegQuality={setJpegQuality}
+            onPickFiles={onPickFiles}
+            resetAll={resetAll}
+            renderAll={() => void renderAll()}
+            downloadZip={() => void downloadZip()}
+          />
         </Grid>
 
         <Grid size={{ xs: 12, md: 8 }}>
-          <Card>
-            <CardHeader
-              title={`プレビュー (${previews.length})`}
-              subheader="スタンプ済み画像"
-            />
-            <CardContent>
-              {!previews.length ? (
-                <Typography color="text.secondary">
-                  画像を選択すると自動で生成・プレビュー表示されます。
-                </Typography>
-              ) : (
-                <Stack spacing={3}>
-                  <Box>
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                      1920x1080
-                    </Typography>
-                    <Grid container spacing={2}>
-                      {previews
-                        .filter((p) => p.width === 1920 && p.height === 1080)
-                        .map((p) => (
-                          <Grid size={{ xs: 12, md: 6 }} key={p.id}>
-                            <Box
-                              sx={{
-                                border: "1px solid",
-                                borderColor: "divider",
-                                borderRadius: 2,
-                                overflow: "hidden",
-                              }}
-                            >
-                              <Box sx={{ p: 1, bgcolor: "background.default" }}>
-                                <Typography variant="caption" sx={{ display: "block" }} noWrap title={p.name}>
-                                  {p.name}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary" noWrap>
-                                  {p.sizeLabel}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary" noWrap title={p.label}>
-                                  {p.label || "—"}
-                                </Typography>
-                              </Box>
-
-                              <Box sx={{ aspectRatio: `${p.width} / ${p.height}`, bgcolor: "black" }}>
-                                {p.error ? (
-                                  <Box sx={{ p: 2 }}>
-                                    <Typography color="error" variant="body2">
-                                      {p.error}
-                                    </Typography>
-                                  </Box>
-                                ) : (
-                                  <img
-                                    src={p.stampedUrl}
-                                    alt={p.name}
-                                    style={{
-                                      width: "100%",
-                                      height: "100%",
-                                      objectFit: "contain",
-                                      display: "block",
-                                    }}
-                                  />
-                                )}
-                              </Box>
-                            </Box>
-                          </Grid>
-                        ))}
-                    </Grid>
-                  </Box>
-
-                  <Box>
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                      500x750
-                    </Typography>
-                    <Grid container spacing={2}>
-                      {previews
-                        .filter((p) => p.width === 500 && p.height === 750)
-                        .map((p) => (
-                          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={p.id}>
-                            <Box
-                              sx={{
-                                border: "1px solid",
-                                borderColor: "divider",
-                                borderRadius: 2,
-                                overflow: "hidden",
-                              }}
-                            >
-                              <Box sx={{ p: 1, bgcolor: "background.default" }}>
-                                <Typography variant="caption" sx={{ display: "block" }} noWrap title={p.name}>
-                                  {p.name}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary" noWrap>
-                                  {p.sizeLabel}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary" noWrap title={p.label}>
-                                  {p.label || "—"}
-                                </Typography>
-                              </Box>
-
-                              <Box sx={{ aspectRatio: `${p.width} / ${p.height}`, bgcolor: "black" }}>
-                                {p.error ? (
-                                  <Box sx={{ p: 2 }}>
-                                    <Typography color="error" variant="body2">
-                                      {p.error}
-                                    </Typography>
-                                  </Box>
-                                ) : (
-                                  <img
-                                    src={p.stampedUrl}
-                                    alt={p.name}
-                                    style={{
-                                      width: "100%",
-                                      height: "100%",
-                                      objectFit: "contain",
-                                      display: "block",
-                                    }}
-                                  />
-                                )}
-                              </Box>
-                            </Box>
-                          </Grid>
-                        ))}
-                    </Grid>
-                  </Box>
-                </Stack>
-              )}
-            </CardContent>
-          </Card>
+          <PreviewPanel previews={previews} />
         </Grid>
       </Grid>
     </Box>
