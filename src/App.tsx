@@ -22,8 +22,6 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 
-type OutputFormat = "png" | "jpeg";
-
 type PreviewItem = {
   id: string;
   name: string;
@@ -153,7 +151,6 @@ export default function App() {
   const [useShadow, setUseShadow] = useState<boolean>(true);
   const [shadowAlpha, setShadowAlpha] = useState<number>(0.6);
 
-  const [outputFormat, setOutputFormat] = useState<OutputFormat>("png");
   const [jpegQuality, setJpegQuality] = useState<number>(0.92);
 
   const outputSizes: OutputSize[] = useMemo(
@@ -322,7 +319,7 @@ export default function App() {
           ctx.fillStyle = textColor;
           ctx.fillText(label, x + padding, y + padding);
 
-          const mime = outputFormat === "jpeg" ? "image/jpeg" : "image/png";
+          const mime = "image/jpeg";
           const blob = await canvasToBlob(canvas, mime, jpegQuality);
           const stampedUrl = URL.createObjectURL(blob);
 
@@ -363,7 +360,6 @@ export default function App() {
     padding,
     useShadow,
     shadowAlpha,
-    outputFormat,
     jpegQuality,
     outputSizes,
   ]);
@@ -380,17 +376,18 @@ export default function App() {
     const zip = new JSZip();
     valid.forEach((p) => {
       const base = p.name.replace(/\.[^.]+$/, "");
-      const ext = outputFormat === "jpeg" ? "jpg" : "png";
-      const n = padNumber(p.sequenceNumber, digits);
-      const sizeTag = p.sizeLabel.replace(/\s+/g, "");
-      const fileName = `${n}_${base}_${sizeTag}.${ext}`;
+      const ext = "jpg";
+      const isPortrait = p.width === 500 && p.height === 750;
+      const prefix = isPortrait ? "No8_" : "No7_";
+      const sizeTag = isPortrait ? "Vertical" : "Horizontal";
+      const fileName = `${prefix}${base}_${sizeTag}.${ext}`;
       zip.file(fileName, p.stampedBlob as Blob);
     });
 
     const blob = await zip.generateAsync({ type: "blob" });
     const zipName = `stamped_${new Date().toISOString().slice(0, 10)}.zip`;
     saveAs(blob, zipName);
-  }, [previews, outputFormat, digits]);
+  }, [previews]);
 
   return (
     <Box sx={{ p: 2 }}>
@@ -573,28 +570,14 @@ export default function App() {
 
                 <Divider />
 
-                <Stack direction="row" spacing={1}>
-                  <TextField
-                    label="出力形式"
-                    value={outputFormat}
-                    onChange={(e) => setOutputFormat(e.target.value === "jpeg" ? "jpeg" : "png")}
-                    select
-                    SelectProps={{ native: true }}
-                    fullWidth
-                  >
-                    <option value="png">PNG（劣化なし）</option>
-                    <option value="jpeg">JPEG（軽い）</option>
-                  </TextField>
-                  <TextField
-                    label="JPEG品質"
-                    type="number"
-                    value={jpegQuality}
-                    disabled={outputFormat !== "jpeg"}
-                    onChange={(e) => setJpegQuality(clamp(Number(e.target.value || 0.92), 0.1, 1))}
-                    inputProps={{ min: 0.1, max: 1, step: 0.01 }}
-                    fullWidth
-                  />
-                </Stack>
+                <TextField
+                  label="JPEG品質"
+                  type="number"
+                  value={jpegQuality}
+                  onChange={(e) => setJpegQuality(clamp(Number(e.target.value || 0.92), 0.1, 1))}
+                  inputProps={{ min: 0.1, max: 1, step: 0.01 }}
+                  fullWidth
+                />
 
                 <Button
                   variant="contained"
