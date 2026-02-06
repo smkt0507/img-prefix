@@ -93,6 +93,7 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
+
 export default function App() {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -103,6 +104,12 @@ export default function App() {
 
   // --- stamp settings ---
   const [prefix, setPrefix] = useState<string>("EP.");
+  // 追加: 横用/縦用のファイル名prefix
+  const [landscapePrefix, setLandscapePrefix] = useState<string>("No7_");
+  const [portraitPrefix, setPortraitPrefix] = useState<string>("No8_");
+  // 追加: 横用/縦用のタグ
+  const [landscapeTag, setLandscapeTag] = useState<string>("_Horizontal");
+  const [portraitTag, setPortraitTag] = useState<string>("_Vertical");
   const [startNumber, setStartNumber] = useState<number>(1);
   const [digits, setDigits] = useState<number>(1);
   const [fontFamily, setFontFamily] = useState<string>(
@@ -346,16 +353,16 @@ export default function App() {
       const base = p.name.replace(/\.[^.]+$/, "");
       const ext = "jpg";
       const isPortrait = p.width === 500 && p.height === 750;
-      const prefix = isPortrait ? "No8_" : "No7_";
-      const sizeTag = isPortrait ? "Vertical" : "Horizontal";
-      const fileName = `${prefix}${base}_${sizeTag}.${ext}`;
+      const prefix = isPortrait ? portraitPrefix : landscapePrefix;
+      const tag = isPortrait ? portraitTag : landscapeTag;
+      const fileName = `${prefix}${base}_${tag}.${ext}`;
       zip.file(fileName, p.stampedBlob as Blob);
     });
 
     const blob = await zip.generateAsync({ type: "blob" });
     const zipName = `stamped_${new Date().toISOString().slice(0, 10)}.zip`;
     saveAs(blob, zipName);
-  }, [previews]);
+  }, [previews, landscapePrefix, portraitPrefix, landscapeTag, portraitTag]);
 
   return (
     <Box sx={{ p: 2 }}>
@@ -369,6 +376,14 @@ export default function App() {
             progress={progress}
             prefix={prefix}
             setPrefix={setPrefix}
+            landscapePrefix={landscapePrefix}
+            setLandscapePrefix={setLandscapePrefix}
+            portraitPrefix={portraitPrefix}
+            setPortraitPrefix={setPortraitPrefix}
+            landscapeTag={landscapeTag}
+            setLandscapeTag={setLandscapeTag}
+            portraitTag={portraitTag}
+            setPortraitTag={setPortraitTag}
             startNumber={startNumber}
             setStartNumber={setStartNumber}
             digits={digits}

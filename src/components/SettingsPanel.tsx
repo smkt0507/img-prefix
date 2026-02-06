@@ -28,6 +28,14 @@ type SettingsPanelProps = {
   progress: ProgressState;
   prefix: string;
   setPrefix: React.Dispatch<React.SetStateAction<string>>;
+  landscapePrefix: string;
+  setLandscapePrefix: React.Dispatch<React.SetStateAction<string>>;
+  portraitPrefix: string;
+  setPortraitPrefix: React.Dispatch<React.SetStateAction<string>>;
+  landscapeTag: string;
+  setLandscapeTag: React.Dispatch<React.SetStateAction<string>>;
+  portraitTag: string;
+  setPortraitTag: React.Dispatch<React.SetStateAction<string>>;
   startNumber: number;
   setStartNumber: React.Dispatch<React.SetStateAction<number>>;
   digits: number;
@@ -70,6 +78,14 @@ export default function SettingsPanel({
   progress,
   prefix,
   setPrefix,
+  landscapePrefix,
+  setLandscapePrefix,
+  portraitPrefix,
+  setPortraitPrefix,
+  landscapeTag,
+  setLandscapeTag,
+  portraitTag,
+  setPortraitTag,
   startNumber,
   setStartNumber,
   digits,
@@ -146,13 +162,48 @@ export default function SettingsPanel({
 
           <Divider />
 
+
           <TextField
             label="プレフィックス"
             value={prefix}
             onChange={(e) => setPrefix(e.target.value)}
-            helperText="例：EP / 第 / # など"
+            helperText="画像左上の話数ラベル用（例：EP.）"
             fullWidth
           />
+
+          <Stack direction="row" spacing={1}>
+            <TextField
+              label="横画像ファイル名Prefix"
+              value={landscapePrefix}
+              onChange={(e) => setLandscapePrefix(e.target.value)}
+              helperText="例：No7_"
+              fullWidth
+            />
+            <TextField
+              label="縦画像ファイル名Prefix"
+              value={portraitPrefix}
+              onChange={(e) => setPortraitPrefix(e.target.value)}
+              helperText="例：No8_"
+              fullWidth
+            />
+          </Stack>
+
+          <Stack direction="row" spacing={1}>
+            <TextField
+              label="横画像タグ"
+              value={landscapeTag}
+              onChange={(e) => setLandscapeTag(e.target.value)}
+              helperText="例：Horizontal"
+              fullWidth
+            />
+            <TextField
+              label="縦画像タグ"
+              value={portraitTag}
+              onChange={(e) => setPortraitTag(e.target.value)}
+              helperText="例：Vertical"
+              fullWidth
+            />
+          </Stack>
 
           <Stack direction="row" spacing={1}>
             <TextField
