@@ -105,11 +105,11 @@ export default function App() {
   // --- stamp settings ---
   const [prefix, setPrefix] = useState<string>("EP.");
   // 追加: 横用/縦用のファイル名prefix
-  const [landscapePrefix, setLandscapePrefix] = useState<string>("No7_");
-  const [portraitPrefix, setPortraitPrefix] = useState<string>("No8_");
+  const [landscapePrefix, setLandscapePrefix] = useState<string>("No9_");
+  const [portraitPrefix, setPortraitPrefix] = useState<string>("No10_");
   // 追加: 横用/縦用のタグ
-  const [landscapeTag, setLandscapeTag] = useState<string>("_Horizontal");
-  const [portraitTag, setPortraitTag] = useState<string>("_Vertical");
+  const [landscapeTag, setLandscapeTag] = useState<string>("_Landscape");
+  const [portraitTag, setPortraitTag] = useState<string>("_Portrait");
   const [startNumber, setStartNumber] = useState<number>(1);
   const [digits, setDigits] = useState<number>(1);
   const [fontFamily, setFontFamily] = useState<string>(
@@ -132,21 +132,21 @@ export default function App() {
     () => [
       {
         key: "landscape",
-        width: 1920,
-        height: 1080,
+        width: 2430,
+        height: 1440,
         fontSize: 170,
         offsetX: 30,
         offsetY: 30,
-        label: "1920x1080",
+        label: "2430x1440",
       },
       {
         key: "portrait",
-        width: 500,
-        height: 750,
+        width: 1440,
+        height: 2176,
         fontSize: 80,
         offsetX: 12,
         offsetY: 8,
-        label: "500x750",
+        label: "1440x2176",
       },
     ],
     []
@@ -352,7 +352,7 @@ export default function App() {
     valid.forEach((p) => {
       const base = p.name.replace(/\.[^.]+$/, "");
       const ext = "jpg";
-      const isPortrait = p.width === 500 && p.height === 750;
+      const isPortrait = p.width === 1440 && p.height === 2176;
       const prefix = isPortrait ? portraitPrefix : landscapePrefix;
       const tag = isPortrait ? portraitTag : landscapeTag;
       const fileName = `${prefix}${base}_${tag}.${ext}`;

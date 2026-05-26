@@ -176,14 +176,14 @@ export default function SettingsPanel({
               label="横画像ファイル名Prefix"
               value={landscapePrefix}
               onChange={(e) => setLandscapePrefix(e.target.value)}
-              helperText="例：No7_"
+              helperText="例：No9_"
               fullWidth
             />
             <TextField
               label="縦画像ファイル名Prefix"
               value={portraitPrefix}
               onChange={(e) => setPortraitPrefix(e.target.value)}
-              helperText="例：No8_"
+              helperText="例：No10_"
               fullWidth
             />
           </Stack>
@@ -193,14 +193,14 @@ export default function SettingsPanel({
               label="横画像タグ"
               value={landscapeTag}
               onChange={(e) => setLandscapeTag(e.target.value)}
-              helperText="例：Horizontal"
+              helperText="例：Landscape"
               fullWidth
             />
             <TextField
               label="縦画像タグ"
               value={portraitTag}
               onChange={(e) => setPortraitTag(e.target.value)}
-              helperText="例：Vertical"
+              helperText="例：Portrait"
               fullWidth
             />
           </Stack>
