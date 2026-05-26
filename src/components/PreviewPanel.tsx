@@ -69,11 +69,11 @@ export default function PreviewPanel({ previews }: PreviewPanelProps) {
           <Stack spacing={3}>
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                1920x1080
+                2430x1440
               </Typography>
               <Grid container spacing={2}>
                 {previews
-                  .filter((p) => p.width === 1920 && p.height === 1080)
+                  .filter((p) => p.width === 2430 && p.height === 1440)
                   .map((p) => (
                     <Grid size={{ xs: 12, md: 6 }} key={p.id}>
                       <PreviewCard item={p} />
@@ -84,11 +84,11 @@ export default function PreviewPanel({ previews }: PreviewPanelProps) {
 
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                500x750
+                1440x2176
               </Typography>
               <Grid container spacing={2}>
                 {previews
-                  .filter((p) => p.width === 500 && p.height === 750)
+                  .filter((p) => p.width === 1440 && p.height === 2176)
                   .map((p) => (
                     <Grid size={{ xs: 12, sm: 6, md: 3 }} key={p.id}>
                       <PreviewCard item={p} />
