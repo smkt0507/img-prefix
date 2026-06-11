@@ -93,6 +93,61 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
+function drawEdgeFade(
+  ctx: CanvasRenderingContext2D,
+  drawX: number,
+  drawY: number,
+  drawW: number,
+  drawH: number,
+  canvasW: number,
+  canvasH: number,
+  fadeWidth: number
+): void {
+  const hasHorizontalBars = drawX > 0.5;
+  const hasVerticalBars = drawY > 0.5;
+
+  if (hasHorizontalBars) {
+    const width = Math.min(fadeWidth, drawW / 2);
+
+    const left = ctx.createLinearGradient(drawX, 0, drawX + width, 0);
+    left.addColorStop(0, "#000000");
+    left.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = left;
+    ctx.fillRect(drawX, drawY, width, drawH);
+
+    const right = ctx.createLinearGradient(drawX + drawW - width, 0, drawX + drawW, 0);
+    right.addColorStop(0, "rgba(0,0,0,0)");
+    right.addColorStop(1, "#000000");
+    ctx.fillStyle = right;
+    ctx.fillRect(drawX + drawW - width, drawY, width, drawH);
+  }
+
+  if (hasVerticalBars) {
+    const height = Math.min(fadeWidth, drawH / 2);
+
+    const top = ctx.createLinearGradient(0, drawY, 0, drawY + height);
+    top.addColorStop(0, "#000000");
+    top.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = top;
+    ctx.fillRect(drawX, drawY, drawW, height);
+
+    const bottom = ctx.createLinearGradient(0, drawY + drawH - height, 0, drawY + drawH);
+    bottom.addColorStop(0, "rgba(0,0,0,0)");
+    bottom.addColorStop(1, "#000000");
+    ctx.fillStyle = bottom;
+    ctx.fillRect(drawX, drawY + drawH - height, drawW, height);
+  }
+
+  ctx.fillStyle = "#000000";
+  if (hasHorizontalBars) {
+    ctx.fillRect(0, 0, drawX, canvasH);
+    ctx.fillRect(drawX + drawW, 0, canvasW - drawX - drawW, canvasH);
+  }
+  if (hasVerticalBars) {
+    ctx.fillRect(0, 0, canvasW, drawY);
+    ctx.fillRect(0, drawY + drawH, canvasW, canvasH - drawY - drawH);
+  }
+}
 
 export default function App() {
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -125,6 +180,9 @@ export default function App() {
 
   const [useShadow, setUseShadow] = useState<boolean>(true);
   const [shadowAlpha, setShadowAlpha] = useState<number>(0.6);
+
+  const [useEdgeFade, setUseEdgeFade] = useState<boolean>(true);
+  const [edgeFadeWidth, setEdgeFadeWidth] = useState<number>(90);
 
   const [jpegQuality, setJpegQuality] = useState<number>(0.92);
 
@@ -260,6 +318,19 @@ export default function App() {
           const drawY = (canvas.height - drawH) / 2;
           ctx.drawImage(img, drawX, drawY, drawW, drawH);
 
+          if (useEdgeFade) {
+            drawEdgeFade(
+              ctx,
+              drawX,
+              drawY,
+              drawW,
+              drawH,
+              canvas.width,
+              canvas.height,
+              edgeFadeWidth
+            );
+          }
+
           const weight = bold ? "700" : "400";
           ctx.font = `${weight} ${size.fontSize}px ${fontFamily}`;
           ctx.textBaseline = "top";
@@ -335,6 +406,8 @@ export default function App() {
     padding,
     useShadow,
     shadowAlpha,
+    useEdgeFade,
+    edgeFadeWidth,
     jpegQuality,
     outputSizes,
   ]);
@@ -406,6 +479,10 @@ export default function App() {
             setUseShadow={setUseShadow}
             shadowAlpha={shadowAlpha}
             setShadowAlpha={setShadowAlpha}
+            useEdgeFade={useEdgeFade}
+            setUseEdgeFade={setUseEdgeFade}
+            edgeFadeWidth={edgeFadeWidth}
+            setEdgeFadeWidth={setEdgeFadeWidth}
             jpegQuality={jpegQuality}
             setJpegQuality={setJpegQuality}
             onPickFiles={onPickFiles}

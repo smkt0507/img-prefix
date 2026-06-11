@@ -58,6 +58,10 @@ type SettingsPanelProps = {
   setUseShadow: React.Dispatch<React.SetStateAction<boolean>>;
   shadowAlpha: number;
   setShadowAlpha: React.Dispatch<React.SetStateAction<number>>;
+  useEdgeFade: boolean;
+  setUseEdgeFade: React.Dispatch<React.SetStateAction<boolean>>;
+  edgeFadeWidth: number;
+  setEdgeFadeWidth: React.Dispatch<React.SetStateAction<number>>;
   jpegQuality: number;
   setJpegQuality: React.Dispatch<React.SetStateAction<number>>;
   onPickFiles: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -108,6 +112,10 @@ export default function SettingsPanel({
   setUseShadow,
   shadowAlpha,
   setShadowAlpha,
+  useEdgeFade,
+  setUseEdgeFade,
+  edgeFadeWidth,
+  setEdgeFadeWidth,
   jpegQuality,
   setJpegQuality,
   onPickFiles,
@@ -307,6 +315,33 @@ export default function SettingsPanel({
                 step={0.01}
                 onChange={(_, v) => setShadowAlpha(v as number)}
                 valueLabelDisplay="auto"
+              />
+            </>
+          )}
+
+          <Divider />
+
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={useEdgeFade}
+                onChange={(e) => setUseEdgeFade(e.target.checked)}
+              />
+            }
+            label="黒余白との境界をグラデーションでぼかす"
+          />
+
+          {useEdgeFade && (
+            <>
+              <Typography variant="body2">境界のぼかし幅</Typography>
+              <Slider
+                value={edgeFadeWidth}
+                min={20}
+                max={300}
+                step={10}
+                onChange={(_, v) => setEdgeFadeWidth(v as number)}
+                valueLabelDisplay="auto"
+                valueLabelFormat={(v) => `${v}px`}
               />
             </>
           )}
