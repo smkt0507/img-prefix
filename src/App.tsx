@@ -159,6 +159,8 @@ export default function App() {
 
   // --- stamp settings ---
   const [prefix, setPrefix] = useState<string>("EP.");
+  // 追加: ファイル名先頭のベーステキスト（画像名ではなく固定/任意テキスト）
+  const [baseName, setBaseName] = useState<string>("xxxx");
   // 追加: 横用/縦用のファイル名prefix
   const [landscapePrefix, setLandscapePrefix] = useState<string>("No9_");
   const [portraitPrefix, setPortraitPrefix] = useState<string>("No10_");
@@ -423,7 +425,8 @@ export default function App() {
 
     const zip = new JSZip();
     valid.forEach((p) => {
-      const base = p.name.replace(/\.[^.]+$/, "");
+      // ファイル名先頭テキスト（元画像名ではなく設定値。例: xxxx）
+      const base = baseName;
       const ext = "jpg";
       const isPortrait = p.width === 1440 && p.height === 2176;
       // 例) No9_ / No10_ の末尾アンダースコアを除去して No9 / No10 に
@@ -445,6 +448,7 @@ export default function App() {
     saveAs(blob, zipName);
   }, [
     previews,
+    baseName,
     landscapePrefix,
     portraitPrefix,
     landscapeTag,
@@ -464,6 +468,8 @@ export default function App() {
             progress={progress}
             prefix={prefix}
             setPrefix={setPrefix}
+            baseName={baseName}
+            setBaseName={setBaseName}
             landscapePrefix={landscapePrefix}
             setLandscapePrefix={setLandscapePrefix}
             portraitPrefix={portraitPrefix}

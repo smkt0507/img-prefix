@@ -28,6 +28,8 @@ type SettingsPanelProps = {
   progress: ProgressState;
   prefix: string;
   setPrefix: React.Dispatch<React.SetStateAction<string>>;
+  baseName: string;
+  setBaseName: React.Dispatch<React.SetStateAction<string>>;
   landscapePrefix: string;
   setLandscapePrefix: React.Dispatch<React.SetStateAction<string>>;
   portraitPrefix: string;
@@ -82,6 +84,8 @@ export default function SettingsPanel({
   progress,
   prefix,
   setPrefix,
+  baseName,
+  setBaseName,
   landscapePrefix,
   setLandscapePrefix,
   portraitPrefix,
@@ -176,6 +180,14 @@ export default function SettingsPanel({
             value={prefix}
             onChange={(e) => setPrefix(e.target.value)}
             helperText="画像左上の話数ラベル用（例：EP.）"
+            fullWidth
+          />
+
+          <TextField
+            label="ファイル名先頭テキスト"
+            value={baseName}
+            onChange={(e) => setBaseName(e.target.value)}
+            helperText="ファイル名の先頭に付く文字（例：xxxx）"
             fullWidth
           />
 
