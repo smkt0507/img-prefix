@@ -201,14 +201,14 @@ export default function SettingsPanel({
               label="横画像タグ"
               value={landscapeTag}
               onChange={(e) => setLandscapeTag(e.target.value)}
-              helperText="例：Landscape"
+              helperText="例：LANDSCAPE"
               fullWidth
             />
             <TextField
               label="縦画像タグ"
               value={portraitTag}
               onChange={(e) => setPortraitTag(e.target.value)}
-              helperText="例：Portrait"
+              helperText="例：PORTRAIT"
               fullWidth
             />
           </Stack>

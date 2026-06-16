@@ -163,8 +163,8 @@ export default function App() {
   const [landscapePrefix, setLandscapePrefix] = useState<string>("No9_");
   const [portraitPrefix, setPortraitPrefix] = useState<string>("No10_");
   // 追加: 横用/縦用のタグ
-  const [landscapeTag, setLandscapeTag] = useState<string>("_Landscape");
-  const [portraitTag, setPortraitTag] = useState<string>("_Portrait");
+  const [landscapeTag, setLandscapeTag] = useState<string>("LANDSCAPE");
+  const [portraitTag, setPortraitTag] = useState<string>("PORTRAIT");
   const [startNumber, setStartNumber] = useState<number>(1);
   const [digits, setDigits] = useState<number>(1);
   const [fontFamily, setFontFamily] = useState<string>(
@@ -426,16 +426,31 @@ export default function App() {
       const base = p.name.replace(/\.[^.]+$/, "");
       const ext = "jpg";
       const isPortrait = p.width === 1440 && p.height === 2176;
-      const prefix = isPortrait ? portraitPrefix : landscapePrefix;
+      // 例) No9_ / No10_ の末尾アンダースコアを除去して No9 / No10 に
+      const noPart = (isPortrait ? portraitPrefix : landscapePrefix).replace(
+        /_+$/,
+        ""
+      );
       const tag = isPortrait ? portraitTag : landscapeTag;
-      const fileName = `${prefix}${base}_${tag}.${ext}`;
+      const orient = `EP_${tag}`;
+      // 話数 (例: #01) — 最低2桁ゼロ埋め
+      const episode = `#${padNumber(p.sequenceNumber, Math.max(2, digits))}`;
+      // 例) xxxx_No9_EP_LANDSCAPE_#01.jpg
+      const fileName = `${base}_${noPart}_${orient}_${episode}.${ext}`;
       zip.file(fileName, p.stampedBlob as Blob);
     });
 
     const blob = await zip.generateAsync({ type: "blob" });
     const zipName = `stamped_${new Date().toISOString().slice(0, 10)}.zip`;
     saveAs(blob, zipName);
-  }, [previews, landscapePrefix, portraitPrefix, landscapeTag, portraitTag]);
+  }, [
+    previews,
+    landscapePrefix,
+    portraitPrefix,
+    landscapeTag,
+    portraitTag,
+    digits,
+  ]);
 
   return (
     <Box sx={{ p: 2 }}>
