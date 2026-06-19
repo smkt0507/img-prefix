@@ -162,8 +162,8 @@ export default function App() {
   // 追加: ファイル名先頭のベーステキスト（画像名ではなく固定/任意テキスト）
   const [baseName, setBaseName] = useState<string>("xxxx");
   // 追加: 横用/縦用のファイル名prefix
-  const [landscapePrefix, setLandscapePrefix] = useState<string>("No9_");
-  const [portraitPrefix, setPortraitPrefix] = useState<string>("No10_");
+  const [landscapePrefix, setLandscapePrefix] = useState<string>("No7_");
+  const [portraitPrefix, setPortraitPrefix] = useState<string>("No8_");
   // 追加: 横用/縦用のタグ
   const [landscapeTag, setLandscapeTag] = useState<string>("LANDSCAPE");
   const [portraitTag, setPortraitTag] = useState<string>("PORTRAIT");
